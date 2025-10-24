@@ -1,0 +1,145 @@
+#pragma version 8
+txn ApplicationID
+int 0
+==
+bnz main_l10
+txna ApplicationArgs 0
+byte "fund"
+==
+bnz main_l9
+txna ApplicationArgs 0
+byte "confirm"
+==
+bnz main_l8
+txna ApplicationArgs 0
+byte "refund"
+==
+bnz main_l7
+txna ApplicationArgs 0
+byte "status"
+==
+bnz main_l6
+err
+main_l6:
+byte "Status:"
+byte "status"
+app_global_get
+concat
+log
+int 1
+return
+main_l7:
+txn Sender
+byte "buyer"
+app_global_get
+==
+global LatestTimestamp
+byte "timeout"
+app_global_get
+>
+||
+assert
+byte "status"
+app_global_get
+byte "FUNDED"
+==
+assert
+itxn_begin
+int pay
+itxn_field TypeEnum
+byte "buyer"
+app_global_get
+itxn_field Receiver
+byte "amount"
+app_global_get
+int 1000
+-
+itxn_field Amount
+int 1000
+itxn_field Fee
+itxn_submit
+byte "status"
+byte "REFUNDED"
+app_global_put
+int 1
+return
+main_l8:
+txn Sender
+byte "buyer"
+app_global_get
+==
+assert
+byte "status"
+app_global_get
+byte "FUNDED"
+==
+assert
+itxn_begin
+int pay
+itxn_field TypeEnum
+byte "seller"
+app_global_get
+itxn_field Receiver
+byte "amount"
+app_global_get
+int 1000
+-
+itxn_field Amount
+int 1000
+itxn_field Fee
+itxn_submit
+byte "status"
+byte "COMPLETED"
+app_global_put
+int 1
+return
+main_l9:
+txn Sender
+byte "buyer"
+app_global_get
+==
+assert
+byte "status"
+app_global_get
+byte "CREATED"
+==
+assert
+gtxn 0 TypeEnum
+int pay
+==
+assert
+gtxn 0 Receiver
+global CurrentApplicationAddress
+==
+assert
+gtxn 0 Amount
+byte "amount"
+app_global_get
+==
+assert
+byte "status"
+byte "FUNDED"
+app_global_put
+int 1
+return
+main_l10:
+byte "buyer"
+txna ApplicationArgs 0
+app_global_put
+byte "seller"
+txna ApplicationArgs 1
+app_global_put
+byte "amount"
+txna ApplicationArgs 2
+btoi
+app_global_put
+byte "status"
+byte "CREATED"
+app_global_put
+byte "timeout"
+global LatestTimestamp
+int 86400
++
+app_global_put
+int 1
+return
